@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "./style.css";
-const DisplayBox = ({ row, column, value, onClickHandler, selectedBoxes }) => {
+
+const DisplayBox = ({ row, column, value, selectedBoxes }) => {
   const key = `${row}-${column}`;
   return (
     <div
-      key={`input-${row}-${column}`}
+      key={`input-${key}`}
+      id={`input-${key}`}
       className={`displayBox ${selectedBoxes?.includes(key) ? "bg-green" : ""}`}
-      style={{ visibility: value ? "" : "hidden" }}
-      onClick={() => {
-        onClickHandler(row, column, value);
+      style={{
+        visibility: value ? "" : "hidden",
+        cursor: value ? "pointer" : "",
       }}
+      data-display={value}
     ></div>
   );
 };
@@ -23,16 +26,18 @@ function App(props) {
   const [selectedBoxes, updateSelectedBoxes] = useState([]);
   const [isAllBoxesSelected, setIsAllBoxesSelected] = useState(false);
   const totalItemCount = useMemo(() => {
-    return input.reduce((acc, row) => {
-      acc += row.filter(col => col === 1).length;
-      return parseInt(acc);
-    }, [0]);
+    return input.reduce(
+      (acc, row) => {
+        acc += row.filter((col) => col === 1).length;
+        return parseInt(acc);
+      },
+      [0]
+    );
   }, [input]);
 
   useEffect(() => {
     if (isAllBoxesSelected) {
       const intervalId = setTimeout(() => {
-        console.log(selectedBoxes);
         if (!selectedBoxes.length) {
           setIsAllBoxesSelected(false);
           clearInterval(intervalId);
@@ -40,16 +45,18 @@ function App(props) {
         }
         const storedBox = [...selectedBoxes];
         storedBox.shift();
-        console.log(storedBox);
         updateSelectedBoxes(storedBox);
       }, [2000]);
       return () => clearTimeout(intervalId);
     }
   }, [isAllBoxesSelected, selectedBoxes]);
 
-  const onClickHandler = (row, column, value) => {
+  const onClickHandler = (e) => {
+    e.persist();
+    const value = e.target.getAttribute("data-display");
+    const cellData = e?.target?.getAttribute("id")?.split("-");
     if (value && !isAllBoxesSelected) {
-      const key = `${row}-${column}`;
+      const key = `${cellData[1]}-${cellData[2]}`;
       if (!selectedBoxes.includes(key)) {
         updateSelectedBoxes([...selectedBoxes, key]);
         if (selectedBoxes.length + 1 === totalItemCount) {
@@ -60,7 +67,7 @@ function App(props) {
   };
 
   return (
-    <div className="App">
+    <div className="App" onClick={onClickHandler}>
       {input.map((inputValue, row) => (
         <div
           style={{ display: "flex", marginBottom: "10px" }}
@@ -71,7 +78,6 @@ function App(props) {
               row={row}
               column={column}
               value={value}
-              onClickHandler={onClickHandler}
               selectedBoxes={selectedBoxes}
             />
           ))}
